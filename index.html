@@ -260,35 +260,9 @@
 
     </div>
 
-    <script type="module">
-        // Import fungsi-fungsi yang diperlukan dari Firebase SDK
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        // Konfigurasi Firebase Anda
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-        
-        // Variabel global dari environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-        // Inisialisasi Firebase
-        const finalFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
-        const app = initializeApp(finalFirebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        // Path koleksi Firestore yang benar
-        const collectionPath = `artifacts/${appId}/public/data/pengaduan`;
-
-        // --- DATA PENGGUNA ---
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- DATA LOKAL ---
         const users = [
             { id: 'siswa01', username: 'budi.santoso', password: 'password123', name: 'Budi Santoso', role: 'student', kelas: 'XII-A', nomorAbsen: 10 },
             { id: 'siswa02', username: 'citra.lestari', password: 'password123', name: 'Citra Lestari', role: 'student', kelas: 'XII-B', nomorAbsen: 5 },
@@ -296,11 +270,9 @@
             { id: 'siswa04', username: 'eko.prasetyo', password: 'password123', name: 'Eko Prasetyo', role: 'student', kelas: 'XI-B', nomorAbsen: 8 },
             { id: 'admin01', username: 'Admin', password: 'Admin123', name: 'Admin Sekolah', role: 'admin' },
         ];
-
+        
+        let complaintsData = [];
         let currentUser = null;
-        let unsubscribeStudentComplaints = null;
-        let unsubscribeAdminComplaints = null;
-        let isAppInitialized = false;
 
         // --- ELEMEN DOM ---
         const loginPage = document.getElementById('login-page');
@@ -311,40 +283,11 @@
         const loginButton = document.getElementById('login-button');
         
         // --- FUNGSI UTAMA ---
-
-        // Menangani status autentikasi Firebase
-        loginButton.disabled = true;
-        loginButton.textContent = 'Menghubungkan...';
-
-        onAuthStateChanged(auth, async (user) => {
-            if (user && !isAppInitialized) {
-                isAppInitialized = true;
-                initializeAppLogic();
-            } else if (!user) {
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                } catch (error) {
-                    console.error("Firebase sign-in failed:", error);
-                    loginError.textContent = "Gagal terhubung ke server. Silakan muat ulang halaman.";
-                    loginButton.textContent = 'Gagal Terhubung';
-                }
-            }
-        });
-
         function initializeAppLogic() {
-            loginButton.disabled = false;
-            loginButton.textContent = 'Masuk';
-
             loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                
                 const username = loginForm.username.value;
                 const password = loginForm.password.value;
-                
                 const user = users.find(u => u.username === username && u.password === password);
 
                 if (user) {
@@ -361,79 +304,61 @@
                 }
             });
         }
-
+        
         function showStudentDashboard() {
             studentDashboard.classList.remove('hidden');
             document.getElementById('student-welcome').textContent = `Selamat datang, ${currentUser.name}!`;
             document.getElementById('student-name').value = currentUser.name;
             document.getElementById('student-class').value = currentUser.kelas;
             document.getElementById('student-absen').value = currentUser.nomorAbsen;
+            renderStudentComplaints();
+        }
 
-            const complaintsRef = collection(db, collectionPath);
-            // Hapus orderBy dari query
-            const q = query(complaintsRef, where("studentId", "==", currentUser.id));
+        function renderStudentComplaints() {
+            const complaintsList = document.getElementById('complaints-list');
+            complaintsList.innerHTML = '';
             
-            unsubscribeStudentComplaints = onSnapshot(q, (querySnapshot) => {
-                const complaintsList = document.getElementById('complaints-list');
-                complaintsList.innerHTML = '';
-                if (querySnapshot.empty) {
-                    complaintsList.innerHTML = '<p class="text-gray-500">Belum ada pengaduan yang Anda buat.</p>';
-                    return;
-                }
-                
-                const complaints = [];
-                querySnapshot.forEach((doc) => {
-                    complaints.push(doc.data());
-                });
+            const studentComplaints = complaintsData
+                .filter(c => c.studentId === currentUser.id)
+                .sort((a, b) => b.createdAt - a.createdAt);
 
-                // Urutkan data di sisi klien (client-side)
-                complaints.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
+            if (studentComplaints.length === 0) {
+                complaintsList.innerHTML = '<p class="text-gray-500">Belum ada pengaduan yang Anda buat.</p>';
+                return;
+            }
 
-                complaints.forEach((complaint) => {
-                    complaintsList.innerHTML += createComplaintCard(complaint);
-                });
+            studentComplaints.forEach((complaint) => {
+                complaintsList.innerHTML += createComplaintCard(complaint);
             });
         }
 
         function showAdminDashboard() {
             adminDashboard.classList.remove('hidden');
-            loadAdminComplaints('all');
+            renderAdminComplaints('all');
             renderStudentList();
             populateClassFilter();
             
             document.getElementById('class-filter').addEventListener('change', (e) => {
-                loadAdminComplaints(e.target.value);
+                renderAdminComplaints(e.target.value);
             });
         }
 
-        function loadAdminComplaints(classFilter) {
-            if (unsubscribeAdminComplaints) unsubscribeAdminComplaints();
+        function renderAdminComplaints(classFilter) {
+            const tableBody = document.getElementById('admin-complaints-table');
+            tableBody.innerHTML = '';
 
-            const complaintsRef = collection(db, collectionPath);
-            // Hapus orderBy dari query
-            let q = classFilter === 'all'
-                ? query(complaintsRef)
-                : query(complaintsRef, where("kelas", "==", classFilter));
+            const filteredComplaints = (classFilter === 'all'
+                ? complaintsData
+                : complaintsData.filter(c => c.kelas === classFilter)
+            ).sort((a, b) => b.createdAt - a.createdAt);
 
-            unsubscribeAdminComplaints = onSnapshot(q, (querySnapshot) => {
-                const tableBody = document.getElementById('admin-complaints-table');
-                tableBody.innerHTML = '';
-                 if (querySnapshot.empty) {
-                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Tidak ada pengaduan yang cocok dengan filter.</td></tr>';
-                    return;
-                }
+            if (filteredComplaints.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Tidak ada pengaduan yang cocok dengan filter.</td></tr>';
+                return;
+            }
 
-                const complaints = [];
-                querySnapshot.forEach((doc) => {
-                    complaints.push({ id: doc.id, ...doc.data() });
-                });
-
-                // Urutkan data di sisi klien (client-side)
-                complaints.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
-
-                complaints.forEach((complaint) => {
-                    tableBody.innerHTML += createAdminTableRow(complaint);
-                });
+            filteredComplaints.forEach((complaint) => {
+                tableBody.innerHTML += createAdminTableRow(complaint);
             });
         }
 
@@ -443,7 +368,7 @@
                 'Diproses': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
                 'Selesai': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
             };
-            const date = complaint.createdAt?.toDate().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) || 'Baru saja';
+            const date = new Date(complaint.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
             
             return `
                 <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
@@ -472,7 +397,7 @@
                 'Diproses': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
                 'Selesai': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
             };
-            const date = complaint.createdAt?.toDate().toLocaleDateString('id-ID') || '-';
+            const date = new Date(complaint.createdAt).toLocaleDateString('id-ID');
 
             return `
                 <tr>
@@ -494,39 +419,31 @@
             `;
         }
 
-        document.getElementById('complaint-form').addEventListener('submit', async (e) => {
+        document.getElementById('complaint-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            const title = document.getElementById('title').value;
-            const category = document.getElementById('category').value;
-            const content = document.getElementById('content').value;
-            const suggestion = document.getElementById('suggestion').value;
-
-            try {
-                await addDoc(collection(db, collectionPath), {
-                    studentId: currentUser.id,
-                    studentName: currentUser.name,
-                    kelas: currentUser.kelas,
-                    nomorAbsen: currentUser.nomorAbsen,
-                    title: title,
-                    category: category,
-                    content: content,
-                    suggestion: suggestion,
-                    status: 'Dikirim',
-                    createdAt: serverTimestamp(),
-                    followUp: '',
-                    updatedAt: serverTimestamp()
-                });
-                e.target.reset();
-            } catch (error) {
-                console.error("Error adding document: ", error);
-            }
+            const newComplaint = {
+                id: `complaint-${Date.now()}`,
+                studentId: currentUser.id,
+                studentName: currentUser.name,
+                kelas: currentUser.kelas,
+                nomorAbsen: currentUser.nomorAbsen,
+                title: document.getElementById('title').value,
+                category: document.getElementById('category').value,
+                content: document.getElementById('content').value,
+                suggestion: document.getElementById('suggestion').value,
+                status: 'Dikirim',
+                createdAt: new Date(),
+                followUp: '',
+                updatedAt: new Date()
+            };
+            
+            complaintsData.push(newComplaint);
+            e.target.reset();
+            renderStudentComplaints();
         });
 
         function logout() {
             currentUser = null;
-            if (unsubscribeStudentComplaints) unsubscribeStudentComplaints();
-            if (unsubscribeAdminComplaints) unsubscribeAdminComplaints();
-
             studentDashboard.classList.add('hidden');
             adminDashboard.classList.add('hidden');
             loginPage.classList.remove('hidden');
@@ -540,17 +457,14 @@
         const closeFollowUpModalBtn = document.getElementById('close-followup-modal-btn');
         const followUpForm = document.getElementById('follow-up-form');
 
-        window.openFollowUpModal = async (complaintId) => {
-            const docRef = doc(db, collectionPath, complaintId);
-            const docSnap = await getDoc(docRef);
-
-            if (docSnap.exists()) {
-                const complaint = docSnap.data();
+        window.openFollowUpModal = (complaintId) => {
+            const complaint = complaintsData.find(c => c.id === complaintId);
+            if (complaint) {
                 document.getElementById('modal-complaint-id').value = complaintId;
                 document.getElementById('modal-complaint-title').textContent = complaint.title;
                 document.getElementById('modal-complaint-content').textContent = `Isi Pengaduan: ${complaint.content}`;
                 document.getElementById('modal-complaint-suggestion').textContent = complaint.suggestion ? `Saran & Kritik: ${complaint.suggestion}` : '';
-                const date = complaint.createdAt?.toDate().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                const date = new Date(complaint.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
                 document.getElementById('modal-complaint-meta').textContent = `Oleh: ${complaint.studentName} (${complaint.kelas} / ${complaint.nomorAbsen}) • ${date}`;
                 document.getElementById('follow-up-content').value = complaint.followUp || '';
                 document.getElementById('follow-up-status').value = complaint.status;
@@ -565,22 +479,19 @@
         closeFollowUpModalBtn.addEventListener('click', closeFollowUpModal);
         followUpModal.querySelector('.modal-backdrop').addEventListener('click', closeFollowUpModal);
 
-        followUpForm.addEventListener('submit', async (e) => {
+        followUpForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const complaintId = document.getElementById('modal-complaint-id').value;
-            const followUpContent = document.getElementById('follow-up-content').value;
-            const newStatus = document.getElementById('follow-up-status').value;
+            const complaintIndex = complaintsData.findIndex(c => c.id === complaintId);
 
-            const docRef = doc(db, collectionPath, complaintId);
-            try {
-                await updateDoc(docRef, {
-                    followUp: followUpContent,
-                    status: newStatus,
-                    updatedAt: serverTimestamp()
-                });
+            if (complaintIndex > -1) {
+                complaintsData[complaintIndex].followUp = document.getElementById('follow-up-content').value;
+                complaintsData[complaintIndex].status = document.getElementById('follow-up-status').value;
+                complaintsData[complaintIndex].updatedAt = new Date();
+                
                 closeFollowUpModal();
-            } catch (error) {
-                console.error("Error updating document: ", error);
+                const currentFilter = document.getElementById('class-filter').value;
+                renderAdminComplaints(currentFilter);
             }
         });
 
@@ -610,7 +521,6 @@
             const classFilter = document.getElementById('class-filter');
             const studentClasses = [...new Set(users.filter(u => u.role === 'student').map(s => s.kelas))];
             
-            // Hapus opsi lama (kecuali 'Semua Kelas')
             while (classFilter.options.length > 1) {
                 classFilter.remove(1);
             }
@@ -644,7 +554,6 @@
                 nomorAbsen: parseInt(document.getElementById('new-student-absen').value)
             };
 
-            // Cek jika username sudah ada
             if (users.some(u => u.username === newStudent.username)) {
                 alert('Username sudah digunakan. Silakan pilih username lain.');
                 return;
@@ -656,6 +565,9 @@
             closeAddStudentModal();
         });
 
+        // Jalankan aplikasi
+        initializeAppLogic();
+    });
     </script>
 </body>
 </html>
