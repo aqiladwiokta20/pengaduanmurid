@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Pengaduan Siswa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
+        }
+        input:read-only, textarea:read-only {
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+        .dark input:read-only, .dark textarea:read-only {
+            background-color: #374151; /* dark:bg-gray-700 */
+        }
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+
+    <div id="app" class="container mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- Halaman Login -->
+        <div id="login-page">
+            <div class="max-w-md mx-auto mt-10 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Portal Pengaduan Siswa</h1>
+                    <p class="text-gray-500 dark:text-gray-400 mt-2">Silakan masuk untuk melanjutkan</p>
+                </div>
+                <form id="login-form" class="space-y-6">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
+                        <input type="text" id="username" name="username" required class="mt-1 block w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                        <input type="password" id="password" name="password" required class="mt-1 block w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                     <div class="text-sm text-red-500" id="login-error"></div>
+                    <div>
+                        <button type="submit" id="login-button" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Masuk
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dasbor Siswa -->
+        <div id="student-dashboard" class="hidden">
+            <header class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold">Dasbor Siswa</h1>
+                    <p id="student-welcome" class="text-gray-500 dark:text-gray-400"></p>
+                </div>
+                <button id="logout-btn-student" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Keluar</button>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Form Pengaduan -->
+                <div class="lg:col-span-1 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Buat Pengaduan Baru</h2>
+                    <form id="complaint-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium">Nama Siswa</label>
+                            <input type="text" id="student-name" readonly class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md cursor-not-allowed">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium">Kelas</label>
+                                <input type="text" id="student-class" readonly class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md cursor-not-allowed">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">No. Absen</label>
+                                <input type="text" id="student-absen" readonly class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md cursor-not-allowed">
+                            </div>
+                        </div>
+                        <hr class="dark:border-gray-600">
+                        <div>
+                            <label for="title" class="block text-sm font-medium">Judul Pengaduan</label>
+                            <input type="text" id="title" required class="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="category" class="block text-sm font-medium">Kategori</label>
+                            <select id="category" required class="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                <option>Fasilitas Sekolah</option>
+                                <option>Proses Belajar Mengajar</option>
+                                <option>Perundungan (Bullying)</option>
+                                <option>Lainnya</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="content" class="block text-sm font-medium">Isi Pengaduan</label>
+                            <textarea id="content" rows="4" required class="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                        </div>
+                        <div>
+                            <label for="suggestion" class="block text-sm font-medium">Saran dan Kritik (Opsional)</label>
+                            <textarea id="suggestion" rows="2" class="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                        </div>
+                         <div>
+                            <label for="attachment" class="block text-sm font-medium">Lampiran Bukti Foto (Opsional)</label>
+                            <input type="file" id="attachment" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100">
+                            <p class="text-xs text-gray-500 mt-1">Fitur upload hanya demonstrasi.</p>
+                        </div>
+                        <button type="submit" class="w-full py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Kirim Pengaduan</button>
+                    </form>
+                </div>
+
+                <!-- Riwayat Pengaduan -->
+                <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Riwayat Pengaduan Anda</h2>
+                    <div id="complaints-list" class="space-y-4">
+                        <!-- Data pengaduan akan dimuat di sini -->
+                        <p class="text-gray-500">Belum ada pengaduan yang Anda buat.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dasbor Admin -->
+        <div id="admin-dashboard" class="hidden space-y-8">
+            <header class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold">Dasbor Admin</h1>
+                    <p class="text-gray-500 dark:text-gray-400">Selamat datang, Admin!</p>
+                </div>
+                <button id="logout-btn-admin" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Keluar</button>
+            </header>
+
+            <!-- Bagian Pengaduan -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
+                    <h2 class="text-xl font-semibold">Daftar Pengaduan Siswa</h2>
+                    <div>
+                        <label for="class-filter" class="text-sm font-medium mr-2">Filter per Kelas:</label>
+                        <select id="class-filter" class="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="all">Semua Kelas</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Siswa</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Kelas</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Judul</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Tanggal</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-complaints-table" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Bagian Kelola Siswa -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Kelola Data Siswa</h2>
+                    <button id="add-student-btn" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Tambah Siswa Baru</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Username</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Nama Lengkap</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Kelas</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">No. Absen</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Password</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-student-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Tindak Lanjut Admin -->
+        <div id="follow-up-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+            <div class="modal-backdrop fixed inset-0"></div>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg z-10 mx-4 overflow-y-auto max-h-screen">
+                <h2 class="text-xl font-bold mb-4">Tindak Lanjut Pengaduan</h2>
+                <div class="mb-4 p-4 bg-gray-100 dark:bg-gray-700 rounded-md">
+                    <p class="font-semibold text-gray-800 dark:text-gray-200" id="modal-complaint-title"></p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400" id="modal-complaint-meta"></p>
+                    <hr class="my-2 border-gray-300 dark:border-gray-600">
+                    <p class="mt-2 text-gray-700 dark:text-gray-300" id="modal-complaint-content"></p>
+                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400" id="modal-complaint-suggestion"></p>
+                </div>
+                <form id="follow-up-form">
+                    <input type="hidden" id="modal-complaint-id">
+                    <div class="mb-4">
+                        <label for="follow-up-content" class="block text-sm font-medium">Tanggapan / Tindak Lanjut</label>
+                        <textarea id="follow-up-content" rows="4" class="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label for="follow-up-status" class="block text-sm font-medium">Ubah Status</label>
+                        <select id="follow-up-status" class="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="Dikirim">Dikirim</option>
+                            <option value="Diproses">Diproses</option>
+                            <option value="Selesai">Selesai</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="close-followup-modal-btn" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-400">Batal</button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Modal Tambah Siswa -->
+        <div id="add-student-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+            <div class="modal-backdrop fixed inset-0"></div>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg z-10 mx-4">
+                <h2 class="text-xl font-bold mb-4">Tambah Data Siswa Baru</h2>
+                <form id="add-student-form" class="space-y-4">
+                    <div>
+                        <label for="new-student-name" class="block text-sm font-medium">Nama Lengkap</label>
+                        <input type="text" id="new-student-name" required class="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                     <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="new-student-class" class="block text-sm font-medium">Kelas</label>
+                            <input type="text" id="new-student-class" required class="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="new-student-absen" class="block text-sm font-medium">No. Absen</label>
+                            <input type="number" id="new-student-absen" required class="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                    </div>
+                    <hr class="dark:border-gray-600">
+                    <div>
+                        <label for="new-username" class="block text-sm font-medium">Username</label>
+                        <input type="text" id="new-username" required class="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="new-password" class="block text-sm font-medium">Password</label>
+                        <input type="password" id="new-password" required class="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-2">
+                        <button type="button" id="close-add-student-modal-btn" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-400">Batal</button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Simpan Siswa</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        // Import fungsi-fungsi yang diperlukan dari Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Konfigurasi Firebase Anda
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        // Variabel global dari environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Inisialisasi Firebase
+        const finalFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+        const app = initializeApp(finalFirebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        // Path koleksi Firestore yang benar
+        const collectionPath = `artifacts/${appId}/public/data/pengaduan`;
+
+        // --- DATA PENGGUNA ---
+        const users = [
+            { id: 'siswa01', username: 'budi.santoso', password: 'password123', name: 'Budi Santoso', role: 'student', kelas: 'XII-A', nomorAbsen: 10 },
+            { id: 'siswa02', username: 'citra.lestari', password: 'password123', name: 'Citra Lestari', role: 'student', kelas: 'XII-B', nomorAbsen: 5 },
+            { id: 'siswa03', username: 'dewi.anggraini', password: 'password123', name: 'Dewi Anggraini', role: 'student', kelas: 'XI-A', nomorAbsen: 12 },
+            { id: 'siswa04', username: 'eko.prasetyo', password: 'password123', name: 'Eko Prasetyo', role: 'student', kelas: 'XI-B', nomorAbsen: 8 },
+            { id: 'admin01', username: 'Admin', password: 'Admin123', name: 'Admin Sekolah', role: 'admin' },
+        ];
+
+        let currentUser = null;
+        let unsubscribeStudentComplaints = null;
+        let unsubscribeAdminComplaints = null;
+        let isAppInitialized = false;
+
+        // --- ELEMEN DOM ---
+        const loginPage = document.getElementById('login-page');
+        const studentDashboard = document.getElementById('student-dashboard');
+        const adminDashboard = document.getElementById('admin-dashboard');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const loginButton = document.getElementById('login-button');
+        
+        // --- FUNGSI UTAMA ---
+
+        // Menangani status autentikasi Firebase
+        loginButton.disabled = true;
+        loginButton.textContent = 'Menghubungkan...';
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user && !isAppInitialized) {
+                isAppInitialized = true;
+                initializeAppLogic();
+            } else if (!user) {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Firebase sign-in failed:", error);
+                    loginError.textContent = "Gagal terhubung ke server. Silakan muat ulang halaman.";
+                    loginButton.textContent = 'Gagal Terhubung';
+                }
+            }
+        });
+
+        function initializeAppLogic() {
+            loginButton.disabled = false;
+            loginButton.textContent = 'Masuk';
+
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const username = loginForm.username.value;
+                const password = loginForm.password.value;
+                
+                const user = users.find(u => u.username === username && u.password === password);
+
+                if (user) {
+                    currentUser = user;
+                    loginPage.classList.add('hidden');
+                    if (user.role === 'student') {
+                        showStudentDashboard();
+                    } else {
+                        showAdminDashboard();
+                    }
+                    loginError.textContent = '';
+                } else {
+                    loginError.textContent = 'Username atau password salah.';
+                }
+            });
+        }
+
+        function showStudentDashboard() {
+            studentDashboard.classList.remove('hidden');
+            document.getElementById('student-welcome').textContent = `Selamat datang, ${currentUser.name}!`;
+            document.getElementById('student-name').value = currentUser.name;
+            document.getElementById('student-class').value = currentUser.kelas;
+            document.getElementById('student-absen').value = currentUser.nomorAbsen;
+
+            const complaintsRef = collection(db, collectionPath);
+            // Hapus orderBy dari query
+            const q = query(complaintsRef, where("studentId", "==", currentUser.id));
+            
+            unsubscribeStudentComplaints = onSnapshot(q, (querySnapshot) => {
+                const complaintsList = document.getElementById('complaints-list');
+                complaintsList.innerHTML = '';
+                if (querySnapshot.empty) {
+                    complaintsList.innerHTML = '<p class="text-gray-500">Belum ada pengaduan yang Anda buat.</p>';
+                    return;
+                }
+                
+                const complaints = [];
+                querySnapshot.forEach((doc) => {
+                    complaints.push(doc.data());
+                });
+
+                // Urutkan data di sisi klien (client-side)
+                complaints.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
+
+                complaints.forEach((complaint) => {
+                    complaintsList.innerHTML += createComplaintCard(complaint);
+                });
+            });
+        }
+
+        function showAdminDashboard() {
+            adminDashboard.classList.remove('hidden');
+            loadAdminComplaints('all');
+            renderStudentList();
+            populateClassFilter();
+            
+            document.getElementById('class-filter').addEventListener('change', (e) => {
+                loadAdminComplaints(e.target.value);
+            });
+        }
+
+        function loadAdminComplaints(classFilter) {
+            if (unsubscribeAdminComplaints) unsubscribeAdminComplaints();
+
+            const complaintsRef = collection(db, collectionPath);
+            // Hapus orderBy dari query
+            let q = classFilter === 'all'
+                ? query(complaintsRef)
+                : query(complaintsRef, where("kelas", "==", classFilter));
+
+            unsubscribeAdminComplaints = onSnapshot(q, (querySnapshot) => {
+                const tableBody = document.getElementById('admin-complaints-table');
+                tableBody.innerHTML = '';
+                 if (querySnapshot.empty) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Tidak ada pengaduan yang cocok dengan filter.</td></tr>';
+                    return;
+                }
+
+                const complaints = [];
+                querySnapshot.forEach((doc) => {
+                    complaints.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Urutkan data di sisi klien (client-side)
+                complaints.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
+
+                complaints.forEach((complaint) => {
+                    tableBody.innerHTML += createAdminTableRow(complaint);
+                });
+            });
+        }
+
+        function createComplaintCard(complaint) {
+            const statusStyles = {
+                'Dikirim': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+                'Diproses': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+                'Selesai': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+            };
+            const date = complaint.createdAt?.toDate().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) || 'Baru saja';
+            
+            return `
+                <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-semibold">${complaint.title}</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">${date}</p>
+                        </div>
+                        <span class="text-xs font-medium px-2.5 py-0.5 rounded-full ${statusStyles[complaint.status]}">${complaint.status}</span>
+                    </div>
+                    <p class="mt-2 text-sm">${complaint.content}</p>
+                    ${complaint.suggestion ? `<p class="mt-2 text-sm italic text-gray-500"><b>Saran & Kritik:</b> ${complaint.suggestion}</p>` : ''}
+                    ${complaint.followUp ? `
+                    <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <h4 class="text-sm font-semibold text-indigo-600 dark:text-indigo-400">Tindak Lanjut dari Sekolah:</h4>
+                        <p class="text-sm mt-1">${complaint.followUp}</p>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function createAdminTableRow(complaint) {
+             const statusStyles = {
+                'Dikirim': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+                'Diproses': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+                'Selesai': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+            };
+            const date = complaint.createdAt?.toDate().toLocaleDateString('id-ID') || '-';
+
+            return `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">${complaint.studentName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${complaint.kelas}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${complaint.title}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusStyles[complaint.status]}">
+                            ${complaint.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="window.openFollowUpModal('${complaint.id}')" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-200">
+                            Tindak Lanjut
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        document.getElementById('complaint-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('title').value;
+            const category = document.getElementById('category').value;
+            const content = document.getElementById('content').value;
+            const suggestion = document.getElementById('suggestion').value;
+
+            try {
+                await addDoc(collection(db, collectionPath), {
+                    studentId: currentUser.id,
+                    studentName: currentUser.name,
+                    kelas: currentUser.kelas,
+                    nomorAbsen: currentUser.nomorAbsen,
+                    title: title,
+                    category: category,
+                    content: content,
+                    suggestion: suggestion,
+                    status: 'Dikirim',
+                    createdAt: serverTimestamp(),
+                    followUp: '',
+                    updatedAt: serverTimestamp()
+                });
+                e.target.reset();
+            } catch (error) {
+                console.error("Error adding document: ", error);
+            }
+        });
+
+        function logout() {
+            currentUser = null;
+            if (unsubscribeStudentComplaints) unsubscribeStudentComplaints();
+            if (unsubscribeAdminComplaints) unsubscribeAdminComplaints();
+
+            studentDashboard.classList.add('hidden');
+            adminDashboard.classList.add('hidden');
+            loginPage.classList.remove('hidden');
+            loginForm.reset();
+        }
+        document.getElementById('logout-btn-student').addEventListener('click', logout);
+        document.getElementById('logout-btn-admin').addEventListener('click', logout);
+
+        // --- MODAL LOGIC (Follow Up) ---
+        const followUpModal = document.getElementById('follow-up-modal');
+        const closeFollowUpModalBtn = document.getElementById('close-followup-modal-btn');
+        const followUpForm = document.getElementById('follow-up-form');
+
+        window.openFollowUpModal = async (complaintId) => {
+            const docRef = doc(db, collectionPath, complaintId);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const complaint = docSnap.data();
+                document.getElementById('modal-complaint-id').value = complaintId;
+                document.getElementById('modal-complaint-title').textContent = complaint.title;
+                document.getElementById('modal-complaint-content').textContent = `Isi Pengaduan: ${complaint.content}`;
+                document.getElementById('modal-complaint-suggestion').textContent = complaint.suggestion ? `Saran & Kritik: ${complaint.suggestion}` : '';
+                const date = complaint.createdAt?.toDate().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                document.getElementById('modal-complaint-meta').textContent = `Oleh: ${complaint.studentName} (${complaint.kelas} / ${complaint.nomorAbsen}) • ${date}`;
+                document.getElementById('follow-up-content').value = complaint.followUp || '';
+                document.getElementById('follow-up-status').value = complaint.status;
+                followUpModal.classList.remove('hidden');
+            }
+        }
+
+        function closeFollowUpModal() {
+            followUpModal.classList.add('hidden');
+            followUpForm.reset();
+        }
+        closeFollowUpModalBtn.addEventListener('click', closeFollowUpModal);
+        followUpModal.querySelector('.modal-backdrop').addEventListener('click', closeFollowUpModal);
+
+        followUpForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const complaintId = document.getElementById('modal-complaint-id').value;
+            const followUpContent = document.getElementById('follow-up-content').value;
+            const newStatus = document.getElementById('follow-up-status').value;
+
+            const docRef = doc(db, collectionPath, complaintId);
+            try {
+                await updateDoc(docRef, {
+                    followUp: followUpContent,
+                    status: newStatus,
+                    updatedAt: serverTimestamp()
+                });
+                closeFollowUpModal();
+            } catch (error) {
+                console.error("Error updating document: ", error);
+            }
+        });
+
+        // --- ADMIN: KELOLA SISWA LOGIC ---
+        const addStudentModal = document.getElementById('add-student-modal');
+        const addStudentBtn = document.getElementById('add-student-btn');
+        const closeAddStudentModalBtn = document.getElementById('close-add-student-modal-btn');
+        const addStudentForm = document.getElementById('add-student-form');
+
+        function renderStudentList() {
+            const tableBody = document.getElementById('admin-student-table-body');
+            tableBody.innerHTML = '';
+            users.filter(u => u.role === 'student').forEach(student => {
+                tableBody.innerHTML += `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">${student.username}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${student.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${student.kelas}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${student.nomorAbsen}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${student.password}</td>
+                    </tr>
+                `;
+            });
+        }
+        
+        function populateClassFilter() {
+            const classFilter = document.getElementById('class-filter');
+            const studentClasses = [...new Set(users.filter(u => u.role === 'student').map(s => s.kelas))];
+            
+            // Hapus opsi lama (kecuali 'Semua Kelas')
+            while (classFilter.options.length > 1) {
+                classFilter.remove(1);
+            }
+
+            studentClasses.sort().forEach(kelas => {
+                const option = document.createElement('option');
+                option.value = kelas;
+                option.textContent = kelas;
+                classFilter.appendChild(option);
+            });
+        }
+
+        addStudentBtn.addEventListener('click', () => addStudentModal.classList.remove('hidden'));
+        
+        function closeAddStudentModal() {
+            addStudentModal.classList.add('hidden');
+            addStudentForm.reset();
+        }
+        closeAddStudentModalBtn.addEventListener('click', closeAddStudentModal);
+        addStudentModal.querySelector('.modal-backdrop').addEventListener('click', closeAddStudentModal);
+
+        addStudentForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newStudent = {
+                id: `siswa${Date.now()}`,
+                username: document.getElementById('new-username').value,
+                password: document.getElementById('new-password').value,
+                name: document.getElementById('new-student-name').value,
+                role: 'student',
+                kelas: document.getElementById('new-student-class').value,
+                nomorAbsen: parseInt(document.getElementById('new-student-absen').value)
+            };
+
+            // Cek jika username sudah ada
+            if (users.some(u => u.username === newStudent.username)) {
+                alert('Username sudah digunakan. Silakan pilih username lain.');
+                return;
+            }
+
+            users.push(newStudent);
+            renderStudentList();
+            populateClassFilter();
+            closeAddStudentModal();
+        });
+
+    </script>
+</body>
+</html>
