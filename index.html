@@ -250,6 +250,7 @@
                         <label for="new-password" class="block text-sm font-medium">Password</label>
                         <input type="password" id="new-password" required class="mt-1 block w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
+                    <div id="add-student-error" class="text-sm text-red-500"></div>
                     <div class="flex justify-end space-x-3 pt-2">
                         <button type="button" id="close-add-student-modal-btn" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-400">Batal</button>
                         <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Simpan Siswa</button>
@@ -500,6 +501,7 @@
         const addStudentBtn = document.getElementById('add-student-btn');
         const closeAddStudentModalBtn = document.getElementById('close-add-student-modal-btn');
         const addStudentForm = document.getElementById('add-student-form');
+        const addStudentError = document.getElementById('add-student-error');
 
         function renderStudentList() {
             const tableBody = document.getElementById('admin-student-table-body');
@@ -533,7 +535,10 @@
             });
         }
 
-        addStudentBtn.addEventListener('click', () => addStudentModal.classList.remove('hidden'));
+        addStudentBtn.addEventListener('click', () => {
+            addStudentError.textContent = '';
+            addStudentModal.classList.remove('hidden');
+        });
         
         function closeAddStudentModal() {
             addStudentModal.classList.add('hidden');
@@ -544,6 +549,7 @@
 
         addStudentForm.addEventListener('submit', (e) => {
             e.preventDefault();
+            addStudentError.textContent = '';
             const newStudent = {
                 id: `siswa${Date.now()}`,
                 username: document.getElementById('new-username').value,
@@ -555,7 +561,7 @@
             };
 
             if (users.some(u => u.username === newStudent.username)) {
-                alert('Username sudah digunakan. Silakan pilih username lain.');
+                addStudentError.textContent = 'Username sudah digunakan. Silakan pilih username lain.';
                 return;
             }
 
